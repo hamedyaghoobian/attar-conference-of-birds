@@ -507,24 +507,24 @@ function zoomAt(px, py, f) {
   view.y = py - (py - view.y) * s / view.s;
   view.s = s;
   clampView();
-  moved();
+}
+
+// the wheel, the buttons and the keys set where the zoom is going; each frame eases toward it
+let zoomGoal = null;
+function zoomTo(px, py, f) {
+  const s = Math.min(MAX_PX_PER_EM, Math.max(fitScale(), (zoomGoal ? zoomGoal.s : view.s) * f));
+  zoomGoal = { s, px, py };
 }
 
 // ---------- the letters, faint and dotless, under the resting dots ----------
 
-function drawLetters(alpha) {
-  const key = `${view.s.toFixed(3)} ${view.x.toFixed(1)} ${view.y.toFixed(1)} ${alpha.toFixed(3)} ${cw} ${ch}`;
-  if (key === lettersKey) return;
-  lettersKey = key;
-  lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  lctx.clearRect(0, 0, cw, ch);
-  if (alpha < .005) return;
+function setLetters(ctx, s, ox, oy, w, h) {
   const [r, g, b] = palette.letters;
   const [tr, tg, tb] = palette.title;
-  lctx.direction = LTR ? "ltr" : "rtl";
-  lctx.textBaseline = "alphabetic";
-  const x0 = -view.x / view.s, x1 = (cw - view.x) / view.s;
-  const y0 = -view.y / view.s, y1 = (ch - view.y) / view.s;
+  ctx.direction = LTR ? "ltr" : "rtl";
+  ctx.textBaseline = "alphabetic";
+  const x0 = -ox / s, x1 = (w - ox) / s;
+  const y0 = -oy / s, y1 = (h - oy) / s;
   const cFrom = Math.max(0, Math.min(colAt(x0), colAt(x1)));
   const cTo = Math.min(cols - 1, Math.max(colAt(x0), colAt(x1)));
   const rFrom = Math.max(0, Math.floor((y0 - MARGIN) / ROW_H) - 1);
@@ -535,25 +535,86 @@ function drawLetters(alpha) {
       const row = rows[c * perCol + rr];
       if (!row) break;
       if (row.kind === 0) {
-        lctx.textAlign = "left";
-        lctx.fillStyle = `rgba(${r},${g},${b},${palette.letterA * alpha})`;
+        ctx.textAlign = "left";
+        ctx.fillStyle = `rgba(${r},${g},${b},${palette.letterA})`;
         for (let l = row.l; l < row.l + PER && l < T.lines.length; l++) {
-          const px = Math.round(view.s * lineS[l] * 100) / 100;
-          if (px !== size) { lctx.font = `${px}px "Rasm ${hand}"`; size = px; }
-          lctx.fillText(T.lines[l], lineX[l] * view.s + view.x, lineY[l] * view.s + view.y);
+          const px = Math.round(s * lineS[l] * 100) / 100;
+          if (px !== size) { ctx.font = `${px}px "Rasm ${hand}"`; size = px; }
+          ctx.fillText(T.lines[l], lineX[l] * s + ox, lineY[l] * s + oy);
         }
       } else {
         const sec = T.sections[row.si];
         const title = row.kind === 2 ? sec.title : sec.poems[row.pi].title;
-        const px = view.s * (row.kind === 2 ? 1.25 : .85);
-        lctx.font = `${px}px "Hand ${hand}"`; size = px;
-        lctx.textAlign = "center";
-        lctx.fillStyle = `rgba(${tr},${tg},${tb},${(row.kind === 2 ? .8 : .55) * alpha})`;
+        const px = s * (row.kind === 2 ? 1.25 : .85);
+        ctx.font = `${px}px "Hand ${hand}"`; size = px;
+        ctx.textAlign = "center";
+        ctx.fillStyle = `rgba(${tr},${tg},${tb},${(row.kind === 2 ? .8 : .55)})`;
         const y = MARGIN + row.row * ROW_H + BASE;
-        lctx.fillText(title, colCentre(c) * view.s + view.x, y * view.s + view.y);
+        ctx.fillText(title, colCentre(c) * s + ox, y * s + oy);
       }
     }
   }
+}
+
+// The letters are set in tiles, the way a map is, at whole steps of scale, and the tiles are kept:
+// while the view moves only tiles are drawn. A tile not yet set is stood in for by the tiles of the
+// neighbouring step until there is time to set it.
+const TILE = 256;                // css px a side
+const TILE_MS = 6;               // time to spend setting tiles in a frame
+const tiles = new Map();
+let tilesFor = "", tilesPending = false;
+
+function tile(ts, tx, ty, make, keep) {
+  const k = `${ts} ${tx} ${ty}`;
+  const t = tiles.get(k);
+  if (t) { tiles.delete(k); tiles.set(k, t); return t; }     // the most recently used go last
+  if (!make) return null;
+  let c;
+  if (tiles.size >= keep) { const old = tiles.keys().next().value; c = tiles.get(old); tiles.delete(old); }
+  else c = document.createElement("canvas");
+  c.width = c.height = Math.round(TILE * dpr);               // also clears it
+  const x = c.getContext("2d");
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  setLetters(x, ts, -tx * TILE, -ty * TILE, TILE, TILE);
+  tiles.set(k, c);
+  return c;
+}
+
+function drawLetters(alpha) {
+  const key = `${view.s.toFixed(3)} ${view.x.toFixed(1)} ${view.y.toFixed(1)} ${alpha.toFixed(3)} ${cw} ${ch}`;
+  if (key === lettersKey && !tilesPending) return;
+  lettersKey = key;
+  lctx.setTransform(1, 0, 0, 1, 0, 0);
+  lctx.clearRect(0, 0, letters.width, letters.height);
+  tilesPending = false;
+  if (alpha < .005) return;
+  const tag = `${hand} ${document.documentElement.dataset.theme} ${dpr}`;
+  if (tag !== tilesFor) { tiles.clear(); tilesFor = tag; }
+  const ts = Math.min(128, 2 ** Math.round(Math.log2(view.s)));
+  const step = TILE / ts * view.s;                           // a tile on screen, css px
+  const tx0 = Math.floor(-view.x / step), tx1 = Math.floor((cw - view.x) / step);
+  const ty0 = Math.floor(-view.y / step), ty1 = Math.floor((ch - view.y) / step);
+  const keep = 3 * (tx1 - tx0 + 1) * (ty1 - ty0 + 1);
+  const until = performance.now() + TILE_MS;
+  const px = v => Math.round(v * dpr);
+  lctx.globalAlpha = alpha;
+  for (let ty = ty0; ty <= ty1; ty++) {
+    const Y0 = px(view.y + ty * step), Y1 = px(view.y + (ty + 1) * step);
+    for (let tx = tx0; tx <= tx1; tx++) {
+      const X0 = px(view.x + tx * step), X1 = px(view.x + (tx + 1) * step);
+      const c = tile(ts, tx, ty, performance.now() < until, keep);
+      if (c) { lctx.drawImage(c, X0, Y0, X1 - X0, Y1 - Y0); continue; }
+      tilesPending = true;
+      const p = tile(ts / 2, tx >> 1, ty >> 1, false);       // a quarter of the coarser step's tile
+      if (p) { const q = p.width / 2; lctx.drawImage(p, (tx & 1) * q, (ty & 1) * q, q, q, X0, Y0, X1 - X0, Y1 - Y0); continue; }
+      const XM = X0 + Math.round((X1 - X0) / 2), YM = Y0 + Math.round((Y1 - Y0) / 2);
+      for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {   // or the finer step's four
+        const f = tile(ts * 2, tx * 2 + i, ty * 2 + j, false);
+        if (f) lctx.drawImage(f, i ? XM : X0, j ? YM : Y0, i ? X1 - XM : XM - X0, j ? Y1 - YM : YM - Y0);
+      }
+    }
+  }
+  lctx.globalAlpha = 1;
 }
 
 // ---------- the couplet under the pointer ----------
@@ -613,6 +674,7 @@ function local(e) {
 
 sky.addEventListener("pointerdown", e => {
   sky.setPointerCapture(e.pointerId);
+  zoomGoal = null;
   pts.set(e.pointerId, local(e));
   if (pts.size === 1) { dragFrom = local(e); sky.classList.add("dragging"); }
   if (pts.size === 2) {
@@ -658,13 +720,13 @@ sky.addEventListener("wheel", e => {
   e.preventDefault();
   const [x, y] = local(e);
   const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-  zoomAt(x, y, Math.exp(-dy * .0016));
+  zoomTo(x, y, Math.exp(-dy * (e.ctrlKey ? .01 : .0022)));   // ctrl: a trackpad pinch
 }, { passive: false });
 
 const centre = () => [cw / 2, ch / 2];
-document.getElementById("zoom-in").onclick = () => zoomAt(...centre(), 1.8);
-document.getElementById("zoom-out").onclick = () => zoomAt(...centre(), 1 / 1.8);
-document.getElementById("reset").onclick = () => { if (explodeTarget) setExplode(false); fit(); moved(); };
+document.getElementById("zoom-in").onclick = () => zoomTo(...centre(), 1.8);
+document.getElementById("zoom-out").onclick = () => zoomTo(...centre(), 1 / 1.8);
+document.getElementById("reset").onclick = () => { if (explodeTarget) setExplode(false); zoomGoal = null; fit(); moved(); };
 document.getElementById("layers").onclick = () => setExplode(!explodeTarget);
 
 addEventListener("keydown", e => {
@@ -674,9 +736,9 @@ addEventListener("keydown", e => {
   const k = e.key, step = 80;
   if (explodeTarget) { if (k === "Escape") setExplode(false); return; }
   if (k === "Escape" && solo >= 0) { chooseLayer(-1); return; }
-  if (k === "+" || k === "=") zoomAt(...centre(), 1.5);
-  else if (k === "-" || k === "_") zoomAt(...centre(), 1 / 1.5);
-  else if (k === "0") { fit(); moved(); }
+  if (k === "+" || k === "=") zoomTo(...centre(), 1.5);
+  else if (k === "-" || k === "_") zoomTo(...centre(), 1 / 1.5);
+  else if (k === "0") { zoomGoal = null; fit(); moved(); }
   else if (k.startsWith("Arrow")) {
     e.preventDefault();
     view.x += k === "ArrowLeft" ? step : k === "ArrowRight" ? -step : 0;
@@ -720,6 +782,12 @@ function frameLoop(now) {
   if (want >= 0) soloShown = want;
   soloAmt += ((want >= 0 ? 1 : 0) - soloAmt) * (1 - Math.pow(.01, dt / 1000));
   startle += ((near ? 1 : 0) - startle) * Math.min(1, dt / 250);
+
+  if (zoomGoal) {
+    const r = zoomGoal.s / view.s;
+    if (Math.abs(Math.log(r)) < 1e-3) { zoomAt(zoomGoal.px, zoomGoal.py, r); zoomGoal = null; }
+    else zoomAt(zoomGoal.px, zoomGoal.py, Math.pow(r, 1 - Math.pow(1e-6, dt / 1000)));
+  }
 
   const vw = cw / view.s, vh = ch / view.s;
   const cx = (cw / 2 - view.x) / view.s, cy = (ch / 2 - view.y) / view.s;

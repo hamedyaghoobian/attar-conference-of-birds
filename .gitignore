@@ -1,0 +1,6 @@
+book/
+.venv/
+.DS_Store
+__pycache__/
+data/fitzgerald-html/
+.claude/

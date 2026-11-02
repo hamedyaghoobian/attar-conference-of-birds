@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the Birds Leave · Readings, Otherwise</title>
+<meta name="description" content="Attar's Conference of the Birds with every letter taken out. The 112,052 dots that remain fly as a murmuration, and come home to the verse when you stand still.">
+<script>
+  // light or dark; dark unless the visitor chose light
+  try { document.documentElement.dataset.theme = localStorage.getItem("what-the-birds-leave:theme") === "light" ? "light" : "dark"; }
+  catch (_) { document.documentElement.dataset.theme = "dark"; }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="flock.css?v=4">
+</head>
+<body>
+<button id="theme" class="theme-toggle" type="button">light</button>
+
+<p class="kicker"><a href="../">Readings, Otherwise</a> <span>No. 2</span></p>
+
+<main class="room">
+  <figure class="frame" id="frame">
+    <canvas id="letters" aria-hidden="true"></canvas>
+    <canvas id="sky" aria-label="A murmuration made of the dots of Attar's Conference of the Birds. Stay still and the dots return to the verse."></canvas>
+    <div class="controls">
+      <button id="zoom-out" title="Zoom out (−)" aria-label="Zoom out">−</button>
+      <button id="zoom-in" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      <button id="reset" title="See the whole book (0)" aria-label="See the whole book">◻</button>
+      <button id="layers" title="Take the flock apart" aria-label="Take the flock apart into its layers">≋</button>
+    </div>
+    <p class="solo" id="solo" hidden><span class="what"></span><button type="button" title="Bring the whole flock back (Esc)" aria-label="Bring the whole flock back">×</button></p>
+    <p class="hint" id="hint">stay still and the birds come home · scroll or pinch to come closer · drag to move</p>
+    <aside id="panel" aria-live="polite">
+      <p class="where" id="where"></p>
+      <p class="couplet" id="couplet" dir="rtl" lang="fa"></p>
+      <p class="count" id="count"></p>
+    </aside>
+  </figure>
+
+  <section class="label" aria-label="Wall label">
+    <h1>What the Birds Leave</h1>
+    <p class="meta">Farid ud-Din Attar, <em>Manteq al-Tayr</em> (<span lang="fa">منطق‌الطیر</span>), c. 1177 / 2026</p>
+    <p class="meta">Dots in flight. 112,052 dots, 4,697 couplets, one metre</p>
+    <p class="hands">Set in
+      <button type="button" data-hand="naskh" aria-pressed="false">naskh<span lang="fa">نسخ</span></button>
+      <button type="button" data-hand="nastaliq" aria-pressed="false">nastaliq<span lang="fa">نستعلیق</span></button>
+      <button type="button" data-hand="english" aria-pressed="false">English, FitzGerald</button></p>
+
+    <div class="text">
+      <p>In Persian script many letters share one body and are told apart only by their dots. Read from the right, <span lang="fa">ب پ ت ث</span> are one stroke with one, three, two and three dots. Take the strokes away and what is left of a book is a scattering of small diamonds, each one the print of a reed pen pressed once against the page.</p>
+      <p>This is the whole of <em>The Conference of the Birds</em>, all 4,697 couplets, with every letter removed and only the dots kept. They are taken from the poem as the machine sets it: each line shaped in a typeface, each dot lifted from exactly where it falls. Then they are let go.</p>
+      <p>The poem can be set in two hands. Naskh is the book hand, upright and even. Nastaliq is the hand Persian poetry was copied in, the words sloping down to the left, the dots heavier, pressed with a wider pen. Change the hand and the same 112,052 dots take off and come down somewhere else. It is the same poem.</p>
+      <p>Or read it in English. Edward FitzGerald, who made Omar Khayyam famous in English, also made a version of this poem: <em>Bird-Parliament</em>, 1,438 lines, shortened and rhymed, published in 1889 after his death. English has almost no dots. Only <i>i</i> and <i>j</i> carry one, and where an <i>f</i> runs into an <i>i</i> the printer's ligature swallows it. FitzGerald's poem has 2,840. Choose it and the same 112,052 birds set out, but only 2,840 have anywhere to land. The rest scatter and are gone. FitzGerald spells the king <em>Symurgh</em>, with a <i>y</i>, so in English the Simorgh has no dots at all; the only gold left is the dot over the <i>i</i> of <em>Thirty</em>.</p>
+      <p>In the poem the birds of the world gather to look for their king, the Simorgh. The hoopoe leads them through seven valleys. Most give up or die along the way. Thirty arrive, and in the presence of the Simorgh they see only themselves, thirty birds, <span lang="fa">سی مرغ</span>, <em>si morgh</em>.</p>
+      <p>Move and the dots take flight. Stand still and they come home, line by line, right to left, the way the poem is read, and the letters they belong to show faintly beneath them. Come close enough and you can read. Bring your pointer near a resting line and the birds lift off it.</p>
+      <p>Press ≋ in the corner to take the flock apart. The letters lie at the bottom. Above them the dots are sorted by the letters they came from: one dot, two, three. Then the dots of <span lang="fa">پ</span>, <span lang="fa">چ</span> and <span lang="fa">ژ</span>, the letters Persian added when it took the Arabic alphabet for itself, which have no place in Arabic. About one dot in nine is there only because the poem is Persian. Choose a layer and the flock is put back together with only those birds in it, to go through on their own.</p>
+      <p>The gold dots are the ones that belong to the Simorgh, <span lang="fa">سیمرغ</span>, wherever its name is written, and to the eight places where Attar splits it into <span lang="fa">سی مرغ</span>, thirty birds. There are 164 of them in the flock.</p>
+    </div>
+
+    <p class="colophon">Text: the edition on <a href="https://ganjoor.net/attar/manteghotteyr">Ganjoor</a>, 211 poems in 29 sections, where the poem can also be heard read aloud. English: Edward FitzGerald, <em>Bird-Parliament</em>, from <em>Letters and Literary Remains</em> (1889), in the transcription at <a href="https://sacred-texts.com/isl/bp/index.htm">sacred-texts.com</a>. Set in Amiri by Khaled Hosny, Gulzar by Simon Cozens and EB Garamond by Georg Duffner and Octavio Pardo, shaped with HarfBuzz; the dots were split from the letters and counted with code, and checked against a letter-by-letter count of the text. The two hands, built in different ways, give the same number of dots. Made in 2026 with Claude, a language model, which reads Persian without ever seeing a dot.</p>
+  </section>
+</main>
+
+<noscript><p class="fallback">This piece needs JavaScript. <a href="https://ganjoor.net/attar/manteghotteyr">Read the poem on Ganjoor instead.</a></p></noscript>
+
+<script src="flock.js?v=4"></script>
+</body>
+</html>

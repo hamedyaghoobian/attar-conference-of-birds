@@ -1,0 +1,313 @@
+@font-face {
+  font-family: "Amiri Attar";
+  src: url("data/naskh/hand.woff2") format("woff2");
+  font-display: block;
+}
+
+:root {
+  --wall: #0e0d0c;
+  --wall-lit: #1c1a17;
+  --ink: #ece2d0;
+  --muted: #8d857a;
+  --gold: #e3a93c;
+  --bone: #f5ecdc;
+  --sky: #070706;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse 70% 55% at 50% 32%, var(--wall-lit), var(--wall) 70%) fixed, var(--wall);
+  color: var(--ink);
+  font-family: "EB Garamond", Garamond, Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+[lang="fa"] { font-family: "Amiri Attar", "EB Garamond", serif; unicode-bidi: isolate; }
+
+.kicker {
+  margin: 0;
+  padding: 1.6rem 1rem 0;
+  text-align: center;
+  font: 500 .72rem/1 "IBM Plex Mono", monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kicker a { text-decoration: none; border-bottom: 1px solid rgba(236, 226, 208, .25); }
+.kicker span { margin-left: .8em; }
+
+.room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.2rem 1rem 5rem;
+}
+
+/* ---- the frame: no frame, only a printer's crop marks at the corners ---- */
+
+.frame {
+  --w: min(88vw, calc((100vh - 9rem) * var(--aspect, 1.45)));
+  --crop: 26px;
+  --crop-ink: rgba(236, 226, 208, .5);
+  position: relative;
+  margin: 0;
+  width: var(--w);
+  aspect-ratio: var(--aspect, 1.45);
+  padding: 0;
+  background: var(--sky);
+  touch-action: none;
+}
+.frame::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--crop) * -1);
+  pointer-events: none;
+  background:
+    linear-gradient(var(--crop-ink), var(--crop-ink)) left 0 top var(--crop) / 16px 1px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) left var(--crop) top 0 / 1px 16px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) right 0 top var(--crop) / 16px 1px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) right var(--crop) top 0 / 1px 16px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) left 0 bottom var(--crop) / 16px 1px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) left var(--crop) bottom 0 / 1px 16px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) right 0 bottom var(--crop) / 16px 1px no-repeat,
+    linear-gradient(var(--crop-ink), var(--crop-ink)) right var(--crop) bottom 0 / 1px 16px no-repeat;
+}
+#panel:not(.show) { visibility: hidden; }
+
+#letters, #sky {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#sky { cursor: crosshair; }
+
+/* ---- controls ---- */
+
+.controls {
+  position: absolute;
+  right: .6rem;
+  top: .6rem;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .4s;
+}
+.frame:hover .controls, .frame:focus-within .controls { opacity: 1; }
+.controls button {
+  all: unset;
+  cursor: pointer;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(10, 9, 8, .6);
+  color: var(--ink);
+  font: 500 .95rem/1 "IBM Plex Mono", monospace;
+  backdrop-filter: blur(4px);
+}
+.controls button:hover { background: rgba(227, 169, 60, .55); }
+.controls button:focus-visible { outline: 1px solid var(--bone); }
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: .7rem;
+  transform: translateX(-50%);
+  margin: 0;
+  font: 400 .66rem/1 "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  color: rgba(245, 236, 220, .7);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 1.2s;
+}
+.hint.gone { opacity: 0; }
+
+/* ---- the couplet under the pointer ---- */
+
+#panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: .9rem 1.2rem 1rem;
+  background: linear-gradient(to top, rgba(7, 7, 6, .95), rgba(7, 7, 6, .86) 75%, rgba(7, 7, 6, 0));
+  transform: translateY(105%);
+  transition: transform .4s cubic-bezier(.2, .8, .2, 1);
+  pointer-events: none;
+  text-align: center;
+}
+#panel.show { transform: none; }
+#panel .where {
+  margin: 0 0 .35rem;
+  font: 500 .64rem/1.3 "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+#panel .where [lang="fa"] { font-size: 1.15rem; letter-spacing: 0; text-transform: none; }
+#panel .couplet {
+  margin: 0;
+  font-family: "Amiri Attar", serif;
+  font-size: clamp(1.05rem, 2vw, 1.4rem);
+  line-height: 1.7;
+  color: #b9b0a2;
+}
+#panel .couplet b { font-weight: 400; color: var(--bone); }
+#panel .couplet .sep { display: inline-block; margin: 0 1.2em; color: var(--muted); }
+#panel .count {
+  margin: .25rem 0 0;
+  font: 400 .64rem/1.3 "IBM Plex Mono", monospace;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+/* ---- wall label ---- */
+
+.label {
+  width: min(36rem, 100%);
+  margin-top: 3rem;
+  align-self: center;
+}
+.label h1 {
+  margin: 0;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  color: var(--bone);
+}
+.label .meta {
+  margin: .2rem 0 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+.hands { margin: .7rem 0 0; font: 400 .76rem/1.6 "IBM Plex Mono", monospace; color: var(--muted); }
+.hands button {
+  all: unset;
+  cursor: pointer;
+  margin-left: .4em;
+  padding: .1rem .6rem .15rem;
+  border: 1px solid rgba(236, 226, 208, .22);
+  border-radius: 999px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  transition: background .2s, color .2s, border-color .2s;
+}
+.hands button [lang="fa"] { font-size: 1.15em; letter-spacing: 0; margin-left: .35em; }
+.hands button:hover { color: var(--ink); border-color: currentColor; }
+.hands button[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); }
+.hands button:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+:root[data-theme="light"] .hands button { border-color: rgba(42, 33, 28, .22); }
+.label .text { margin-top: 1.6rem; font-size: 1.12rem; line-height: 1.55; }
+.label .text p { margin: 0 0 .9em; }
+.label .text [lang="fa"] { font-size: 1.15em; }
+.label .colophon {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(236, 226, 208, .14);
+  font-size: .92rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.label .colophon-code { margin-top: .4rem; padding-top: 0; border-top: 0; }
+
+.fallback { text-align: center; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .frame { --w: 100%; --crop: 14px; }
+  .kicker { padding-top: 3.6rem; }
+  .room { padding-left: 1.4rem; padding-right: 1.4rem; }
+  .controls { opacity: 1; }
+  .hint { width: 90%; font-size: .58rem; line-height: 1.5; text-align: center; white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #panel, .hint, .controls { transition: none; }
+}
+
+/* ---- light / dark switch ---- */
+.theme-toggle {
+  all: unset;
+  position: fixed;
+  top: 1.1rem;
+  right: 1.1rem;
+  z-index: 10;
+  cursor: pointer;
+  padding: .35rem .7rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: 500 .66rem/1 "IBM Plex Mono", monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.theme-toggle:hover { color: var(--ink); }
+.theme-toggle:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+
+/* ---- light: a dusk sky, the birds dark against it ---- */
+:root[data-theme="light"] {
+  --wall: #ebe7e0;
+  --wall-lit: #f7f4ef;
+  --ink: #2a2420;
+  --muted: #7a6f67;
+  --gold: #a8700c;
+  --bone: #221b16;
+  --sky: #eee7da;
+}
+:root[data-theme="light"] .frame { --crop-ink: rgba(42, 33, 28, .5); }
+:root[data-theme="light"] #panel {
+  background: linear-gradient(to top, rgba(247, 244, 239, .97), rgba(247, 244, 239, .9) 75%, rgba(247, 244, 239, 0));
+}
+:root[data-theme="light"] #panel .couplet { color: #6a5f56; }
+:root[data-theme="light"] .controls button { background: rgba(247, 244, 239, .8); }
+:root[data-theme="light"] .controls button:hover { color: #fff; }
+:root[data-theme="light"] .hint { color: rgba(42, 33, 28, .65); }
+
+/* ---- layers ---- */
+.layer-label {
+  all: unset;
+  position: absolute; left: 0; top: 0;
+  cursor: pointer; text-align: left; padding: .2rem .35rem; margin: -.2rem -.35rem; border-radius: 4px;
+  font: 500 .62rem/1.3 "IBM Plex Mono", monospace; letter-spacing: .08em;
+  color: var(--bone); white-space: nowrap; pointer-events: none; opacity: 0;
+}
+body.exploded .layer-label { pointer-events: auto; }
+.layer-label:hover b, .layer-label:focus-visible b { color: var(--gold); }
+.layer-label:focus-visible { outline: 1px solid var(--gold); }
+.layer-label b::after { content: " →"; opacity: 0; transition: opacity .2s; }
+.layer-label:hover b::after, .layer-label:focus-visible b::after { opacity: 1; }
+
+/* ---- one layer alone ---- */
+.solo {
+  position: absolute; left: .6rem; top: .6rem; margin: 0;
+  display: flex; align-items: center; gap: .6rem;
+  padding: .35rem .4rem .35rem .75rem;
+  border: 1px solid var(--gold); border-radius: 999px;
+  background: rgba(10, 9, 8, .6); backdrop-filter: blur(4px);
+  font: 500 .62rem/1.3 "IBM Plex Mono", monospace; letter-spacing: .08em; color: var(--gold);
+}
+.solo[hidden] { display: none; }
+.solo small { margin-left: .6em; color: var(--muted); letter-spacing: .02em; }
+.solo small [lang="fa"] { font-size: 1.3em; }
+.solo button {
+  all: unset; cursor: pointer; width: 1.3rem; height: 1.3rem; display: grid; place-items: center;
+  border-radius: 50%; color: var(--ink); font-size: .9rem;
+}
+.solo button:hover { background: rgba(227, 169, 60, .35); }
+.solo button:focus-visible { outline: 1px solid var(--gold); }
+:root[data-theme="light"] .solo { background: rgba(247, 244, 239, .85); }
+.layer-label b { display: block; font-weight: 500; }
+.layer-label small { display: block; font-size: .9em; opacity: .65; letter-spacing: .02em; }
+.layer-label [lang="fa"] { font-size: 1.35em; letter-spacing: .05em; }
+body.exploded .hint { opacity: 0; }
+@media (max-width: 640px) { .layer-label { font-size: .5rem; } }
+
+/* English has one layer of dots, nothing to take apart */
+body.hand-english #layers { display: none; }
+#panel .couplet[lang="en"] { font-size: clamp(1rem, 1.8vw, 1.25rem); }

@@ -19,3 +19,18 @@ python3 -I tools/fitzgerald.py data/fitzgerald-html/bp01.htm data/fitzgerald.jso
 ```
 
 Amiri (Khaled Hosny), Gulzar (Simon Cozens) and EB Garamond (Georg Duffner, Octavio Pardo) are under the SIL Open Font License 1.1 (`fonts/OFL.txt`); the subset fonts in `site/data` are modified versions of them, with each license beside them.
+
+## Licence and how to cite
+
+- **Code**: MIT (`LICENSE`).
+- **The piece** (its words, drawings, data and design, as published at https://hamedyaghoobian.com/readings-otherwise/what-the-birds-leave/): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Use it, change it, teach with it; say where it came from.
+- **What comes from elsewhere keeps its own terms:**
+  - Attar's *Manteq ot-Teyr* is in the public domain; the typed text in `data/` is [Ganjoor](https://ganjoor.net)'s.
+  - Edward FitzGerald's *Bird-Parliament* (1889) is in the public domain.
+  - Fonts (Amiri, Gulzar, EB Garamond, and the subsets made from them) are under the SIL Open Font License 1.1 (`OFL.txt`).
+
+To cite it:
+
+> Yaghoobian, Hamed. 2026. "What the Birds Leave." *Readings, Otherwise*, no. 2. Interactive work, 1 November 2026. https://hamedyaghoobian.com/readings-otherwise/what-the-birds-leave/
+
+`CITATION.cff` has the same, and GitHub's "Cite this repository" reads it. It was made with Claude, a language model, as its colophon says.
